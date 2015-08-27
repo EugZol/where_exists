@@ -14,8 +14,10 @@ ActiveRecord::Base.establish_connection(
 )
 
 ActiveRecord::Migration.create_table :simple_entities, :force => true do |t|
+  t.string :name
 end
 
 ActiveRecord::Migration.create_table :simple_entity_children, :force => true do |t|
   t.integer :simple_entity_id
+  t.string :name
 end
