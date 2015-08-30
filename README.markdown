@@ -1,5 +1,5 @@
 # Where Exists
-**Rails way to harness the power of SQL EXISTS condition**
+**Rails way to harness the power of SQL EXISTS condition**<br>
 [![Gem Version](https://badge.fury.io/rb/where_exists.svg)](http://badge.fury.io/rb/where_exists)
 
 ## Description
