@@ -17,7 +17,7 @@ class SimpleEntityChild < ActiveRecord::Base
   belongs_to :simple_entity
 end
 
-class HasManyTest < Minitest::Test
+class HasManyTest < Minitest::Unit::TestCase
   def setup
     ActiveRecord::Base.descendants.each(&:delete_all)
   end

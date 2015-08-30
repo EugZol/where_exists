@@ -26,14 +26,15 @@ class SecondPolymorphicEntity < ActiveRecord::Base
   has_many :children, as: :polymorphic_entity, class_name: PolymorphicChild
 end
 
-class HasManyPolymorphicTest < Minitest::Test
+class BelongsToPolymorphicTest < Minitest::Unit::TestCase
   def setup
     ActiveRecord::Base.descendants.each(&:delete_all)
   end
 
   def test_exists_only_one_kind
     first_entity = FirstPolymorphicEntity.create!
-    second_entity = SecondPolymorphicEntity.create!(id: first_entity.id + 1)
+    second_entity = SecondPolymorphicEntity.create!
+    second_entity.update_column(:id, first_entity.id + 1)
 
     first_child = PolymorphicChild.create!(polymorphic_entity: first_entity)
     second_child = PolymorphicChild.create!(polymorphic_entity: second_entity)
@@ -48,7 +49,8 @@ class HasManyPolymorphicTest < Minitest::Test
 
   def test_neither_exists
     first_entity = FirstPolymorphicEntity.create!
-    second_entity = SecondPolymorphicEntity.create!(id: first_entity.id + 1)
+    second_entity = SecondPolymorphicEntity.create!
+    second_entity.update_column(:id, first_entity.id + 1)
 
     first_child = PolymorphicChild.create!(polymorphic_entity: first_entity)
     orphaned_child = PolymorphicChild.create!(polymorphic_entity_id: second_entity.id, polymorphic_entity_type: 'FirstPolymorphicEntity')

@@ -21,8 +21,8 @@ module WhereExists
     case association.macro
     when :belongs_to
       queries = where_exists_for_belongs_to_query(association, where_parameters)
-    when :has_many
-      queries = [where_exists_for_has_many_query(association)]
+    when :has_many, :has_one
+      queries = where_exists_for_has_many_query(association, where_parameters)
     else
       raise ArgumentError.new("where_exists: not supported association – #{association.macros.inspect}")
     end
@@ -33,20 +33,18 @@ module WhereExists
       not_string = "NOT "
     end
 
-    queries.map!{|query| query.select(ActiveRecord::FinderMethods::ONE_AS_ONE).where(where_parameters)}
+    #queries.map!{|query| query.select(ActiveRecord::FinderMethods::ONE_AS_ONE).where(where_parameters)}
 
-    queries_sql = queries.map{|query| "(EXISTS (" + query.to_sql + "))"}.join(" OR ")
+    queries_sql = queries.map{|query| "EXISTS (" + query.to_sql + ")"}.join(" OR ")
 
-    result = self.where("#{not_string}(#{queries_sql})")
-
-    puts result.to_sql
-
-    result
+    self.where("#{not_string}(#{queries_sql})")
   end
 
   def where_exists_for_belongs_to_query(association, where_parameters)
-    if association.polymorphic?
-      associated_models = self.distinct(association.foreign_type).pluck(association.foreign_type).map(&:constantize)
+    polymorphic = association.options[:polymorphic].present?
+
+    if polymorphic
+      associated_models = self.select("DISTINCT #{connection.quote_column_name(association.foreign_type)}").pluck(association.foreign_type).map(&:constantize)
     else
       associated_models = [association.klass]
     end
@@ -58,8 +56,8 @@ module WhereExists
 
     associated_models.each do |associated_model|
       other_ids = quote_table_and_column_name(associated_model.table_name, associated_model.primary_key)
-      query = associated_model.where("#{self_ids} = #{other_ids}")
-      if association.polymorphic?
+      query = associated_model.select("1").where("#{self_ids} = #{other_ids}").where(where_parameters)
+      if polymorphic
         other_type = connection.quote(associated_model.name)
         query = query.where("#{self_type} = #{other_type}")
       end
@@ -69,13 +67,20 @@ module WhereExists
     queries
   end
 
-  def where_exists_for_has_many_query(association)
+  def where_exists_for_has_many_query(association, where_parameters)
+    through = association.options[:through].present?
+
+    if through
+      original_association_name = association.name
+      association = association.through_reflection
+    end
+
     associated_model = association.klass
 
     self_ids = quote_table_and_column_name(self.table_name, self.primary_key)
     associated_ids = quote_table_and_column_name(associated_model.table_name, association.foreign_key)
 
-    result = associated_model.where("#{associated_ids} = #{self_ids}")
+    result = associated_model.select("1").where("#{associated_ids} = #{self_ids}")
 
     if association.options[:as]
       other_types = quote_table_and_column_name(associated_model.table_name, association.type)
@@ -83,7 +88,16 @@ module WhereExists
       result = result.where("#{other_types} = #{self_class}")
     end
 
-    result
+    if through
+      unless associated_model.reflect_on_association(original_association_name)
+        original_association_name = original_association_name.to_s.singularize.to_sym
+      end
+      result = result.where_exists(original_association_name, where_parameters)
+    else
+      result = result.where(where_parameters)
+    end
+
+    [result]
   end
 
   def quote_table_and_column_name(table_name, column_name)

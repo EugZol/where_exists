@@ -26,7 +26,7 @@ class IrrelevantPolymorphicEntity < ActiveRecord::Base
   has_many :children, as: :polymorphic_entity, class_name: PolymorphicChild
 end
 
-class HasManyPolymorphicTest < Minitest::Test
+class HasManyPolymorphicTest < Minitest::Unit::TestCase
   def setup
     ActiveRecord::Base.descendants.each(&:delete_all)
   end
