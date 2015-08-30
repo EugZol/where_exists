@@ -11,13 +11,13 @@ Gem::Specification.new do |s|
   s.email       = ["eugzol@gmail.com"]
   s.homepage    = "http://github.com/eugzol/where_exists"
   s.summary     = "#where_exists extension of ActiveRecord"
-  s.description = "#where_exists extension of ActiveRecord"
+  s.description = 'Rails way to harness the power of SQL "EXISTS" statement'
   s.license     = "MIT"
 
-  s.files = Dir["lib/**/*", "MIT-LICENSE", "Rakefile", "README.markdown"]
+  s.files = Dir["lib/**/*", "MIT-LICENSE", "Rakefile", "README.markdownq"]
   s.test_files = Dir["test/**/*"]
 
-  s.add_dependency "rails", ">= 3.2.22"
+  s.add_dependency "rails", ">= 3.2.22", "< 5"
 
-  s.add_development_dependency "sqlite3"
+  s.add_development_dependency "sqlite3", "~> 1.3"
 end
