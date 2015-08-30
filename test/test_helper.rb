@@ -12,12 +12,3 @@ ActiveRecord::Base.establish_connection(
   :adapter => 'sqlite3',
   :database => File.dirname(__FILE__) + "/db/test.db"
 )
-
-ActiveRecord::Migration.create_table :simple_entities, :force => true do |t|
-  t.string :name
-end
-
-ActiveRecord::Migration.create_table :simple_entity_children, :force => true do |t|
-  t.integer :simple_entity_id
-  t.string :name
-end
