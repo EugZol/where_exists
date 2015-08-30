@@ -64,7 +64,7 @@ Also, I don't want to:
 * I tried queries like `User.joins(:group).where(group_id: [1,2,3]).where.not(group_id: [4,5,6])` and they return wrong results (some users from the result set belong to groups 4,5,6 *as well as* 1,2,3)
 * I don't want to do `join` merely for the sake of only checking for existence, because I know that that is a pretty complex (i.e. CPU/memory-intensive) operation for DB
 
-<small>If you wonder how to do that without the gem (i.e. essentially by writing SQL EXISTS statement manually) see that [StackOverflow answer](http://stackoverflow.com/a/32016347/5029266) (disclosure: it's self-answered question of a contributor of this gem).</small>
+<sub><sup>If you wonder how to do that without the gem (i.e. essentially by writing SQL EXISTS statement manually) see that [StackOverflow answer](http://stackoverflow.com/a/32016347/5029266) (disclosure: it's self-answered question of a contributor of this gem).</sup></sub>
 
 And now you are able to do all these things (and more) as simple as:
 
@@ -73,7 +73,7 @@ And now you are able to do all these things (and more) as simple as:
     # It's really neat, isn't it?
     User.where_exists(:groups, id: [4,5,6])
 
-<small>Notice that the second argument is `where` parameters for Group model</small>
+<sub><sup>Notice that the second argument is `where` parameters for Group model</sup></sub>
 
 > Select only users who belong to one set of Groups (`[1,2,3]`) and don't belong to another (`[4,5,6]`)
 
@@ -87,14 +87,14 @@ And now you are able to do all these things (and more) as simple as:
     User.where_exists(:groups, name: ['first','second','third']).
       where_not_exists(:groups, name: ['fourth','fifth','sixth'])
 
-<small>It is possible to add as much attributes to the criteria as it is necessary, just as with regular `where(...)`
+<sub><sup>It is possible to add as much attributes to the criteria as it is necessary, just as with regular `where(...)`</sub></sup>
 
 > Select only users who don't belong to a Group
 
     # And that's just its basic capabilities
     User.where_not_exists(:groups)
 
-<small>Adding parameters (the second argument) to `where_not_exists` method is feasible as well, if you have such requirements.
+<sub><sup>Adding parameters (the second argument) to `where_not_exists` method is feasible as well, if you have such requirements.</sup></sub>
 
 ## Additional capabilities
 
