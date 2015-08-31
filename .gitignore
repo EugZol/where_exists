@@ -3,3 +3,4 @@ log/*.log
 pkg/
 test/db/**
 *.gem
+Gemfile.lock

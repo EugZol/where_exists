@@ -71,7 +71,7 @@ module WhereExists
     through = association.options[:through].present?
 
     if through
-      original_association_name = association.name
+      next_association = association.source_reflection
       association = association.through_reflection
     end
 
@@ -89,10 +89,7 @@ module WhereExists
     end
 
     if through
-      unless associated_model.reflect_on_association(original_association_name)
-        original_association_name = original_association_name.to_s.singularize.to_sym
-      end
-      result = result.where_exists(original_association_name, where_parameters)
+      result = result.where_exists(next_association.name, where_parameters)
     else
       result = result.where(where_parameters)
     end
