@@ -25,7 +25,9 @@ And now you have `where_exists` and `where_not_exists` methods available for you
 
 Syntax:
 
-    Model.where_exists(association, additional_finder_parameters)
+```ruby
+Model.where_exists(association, additional_finder_parameters)
+```
 
 Supported Rails versions: >= 3.2.22.
 
@@ -33,24 +35,30 @@ Supported Rails versions: >= 3.2.22.
 
 Given there is User model:
 
-    class User < ActiveRecord::Base
-      has_many :connections
-      has_many :groups, through: :connections
-    end
+```ruby
+class User < ActiveRecord::Base
+  has_many :connections
+  has_many :groups, through: :connections
+end
+```
 
 And Group:
 
-    class Group < ActiveRecord::Base
-      has_many :connections
-      has_many :users, through: :connections
-    end
+```ruby
+class Group < ActiveRecord::Base
+  has_many :connections
+  has_many :users, through: :connections
+end
+```
 
 And standard many-to-many Connection:
 
-    class Connection
-      belongs_to :user
-      belongs_to :group
-    end
+```ruby
+class Connection
+  belongs_to :user
+  belongs_to :group
+end
+```
 
 What I want to do is to:
 
@@ -70,29 +78,35 @@ And now you are able to do all these things (and more) as simple as:
 
 > Select only users who don't belong to given set of Groups (groups with ids `[4,5,6]`)
 
-    # It's really neat, isn't it?
-    User.where_exists(:groups, id: [4,5,6])
+```ruby
+# It's really neat, isn't it?
+User.where_exists(:groups, id: [4,5,6])
+```
 
 <sub><sup>Notice that the second argument is `where` parameters for Group model</sup></sub>
 
 > Select only users who belong to one set of Groups (`[1,2,3]`) and don't belong to another (`[4,5,6]`)
 
-    # Chain-able like you expect them to be.
-    #
-    # Additional finder parameters is anything that
-    # could be fed to 'where' method.
-    #
-    # Let's use 'name' instead of 'id' here, for example.
+```ruby
+# Chain-able like you expect them to be.
+#
+# Additional finder parameters is anything that
+# could be fed to 'where' method.
+#
+# Let's use 'name' instead of 'id' here, for example.
 
-    User.where_exists(:groups, name: ['first','second','third']).
-      where_not_exists(:groups, name: ['fourth','fifth','sixth'])
+User.where_exists(:groups, name: ['first','second','third']).
+  where_not_exists(:groups, name: ['fourth','fifth','sixth'])
+```
 
 <sub><sup>It is possible to add as much attributes to the criteria as it is necessary, just as with regular `where(...)`</sub></sup>
 
 > Select only users who don't belong to a Group
 
-    # And that's just its basic capabilities
-    User.where_not_exists(:groups)
+```ruby
+# And that's just its basic capabilities
+User.where_not_exists(:groups)
+```
 
 <sub><sup>Adding parameters (the second argument) to `where_not_exists` method is feasible as well, if you have such requirements.</sup></sub>
 
