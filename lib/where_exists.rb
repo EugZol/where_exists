@@ -55,7 +55,8 @@ module WhereExists
     self_type = quote_table_and_column_name(self.table_name, association.foreign_type)
 
     associated_models.each do |associated_model|
-      other_ids = quote_table_and_column_name(associated_model.table_name, associated_model.primary_key)
+      primary_key = association.options[:primary_key] || associated_model.primary_key
+      other_ids = quote_table_and_column_name(associated_model.table_name, primary_key)
       query = associated_model.select("1").where("#{self_ids} = #{other_ids}").where(where_parameters)
       if polymorphic
         other_type = connection.quote(associated_model.name)
@@ -76,8 +77,9 @@ module WhereExists
     end
 
     associated_model = association.klass
+    primary_key = association.options[:primary_key] || self.primary_key
 
-    self_ids = quote_table_and_column_name(self.table_name, self.primary_key)
+    self_ids = quote_table_and_column_name(self.table_name, primary_key)
     associated_ids = quote_table_and_column_name(associated_model.table_name, association.foreign_key)
 
     result = associated_model.select("1").where("#{associated_ids} = #{self_ids}")
