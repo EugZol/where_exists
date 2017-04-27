@@ -18,7 +18,7 @@ class SimpleEntityChild < ActiveRecord::Base
   belongs_to :simple_entity, foreign_key: :parent_id
 end
 
-class HasManyTest < Minitest::Unit::TestCase
+class HasManyTest < Minitest::Test
   def setup
     ActiveRecord::Base.descendants.each(&:delete_all)
   end
@@ -26,7 +26,7 @@ class HasManyTest < Minitest::Unit::TestCase
   def test_without_parameters
     child = SimpleEntityChild.create!
 
-    blank_entity = SimpleEntity.create!(my_id: 999)
+    _blank_entity = SimpleEntity.create!(my_id: 999)
     filled_entity = SimpleEntity.create!(simple_entity_children: [child], my_id: 500)
 
     result = SimpleEntity.where_exists(:simple_entity_children)
@@ -39,8 +39,8 @@ class HasManyTest < Minitest::Unit::TestCase
     wrong_child = SimpleEntityChild.create!(name: 'wrong')
     child = SimpleEntityChild.create!(name: 'right')
 
-    blank_entity = SimpleEntity.create!(my_id: 999)
-    wrong_entity = SimpleEntity.create!(simple_entity_children: [wrong_child], my_id: 500)
+    _blank_entity = SimpleEntity.create!(my_id: 999)
+    _wrong_entity = SimpleEntity.create!(simple_entity_children: [wrong_child], my_id: 500)
     entity = SimpleEntity.create!(name: 'this field is irrelevant', simple_entity_children: [child], my_id: 300)
 
     result = SimpleEntity.where_exists(:simple_entity_children, name: 'right')
@@ -63,7 +63,7 @@ class HasManyTest < Minitest::Unit::TestCase
     child = SimpleEntityChild.create!
 
     blank_entity = SimpleEntity.create!(my_id: 999)
-    filled_entity = SimpleEntity.create!(simple_entity_children: [child], my_id: 500)
+    _filled_entity = SimpleEntity.create!(simple_entity_children: [child], my_id: 500)
 
     result = SimpleEntity.where_not_exists(:simple_entity_children)
 

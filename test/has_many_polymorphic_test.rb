@@ -8,34 +8,34 @@ ActiveRecord::Migration.create_table :irrelevant_polymorphic_entities, :force =>
   t.string :name
 end
 
-ActiveRecord::Migration.create_table :polymorphic_children, :force => true do |t|
-  t.integer :polymorphic_entity_id
-  t.string :polymorphic_entity_type
+ActiveRecord::Migration.create_table :has_many_polymorphic_children, :force => true do |t|
+  t.integer :polymorphic_thing_id
+  t.string :polymorphic_thing_type
   t.string :name
 end
 
-class PolymorphicChild < ActiveRecord::Base
-  belongs_to :polymorphic_entity, polymorphic: true
+class HasManyPolymorphicChild < ActiveRecord::Base
+  belongs_to :polymorphic_thing, polymorphic: true
 end
 
 class RelevantPolymorphicEntity < ActiveRecord::Base
-  has_many :children, as: :polymorphic_entity, class_name: PolymorphicChild
+  has_many :children, as: :polymorphic_thing, class_name: HasManyPolymorphicChild
 end
 
 class IrrelevantPolymorphicEntity < ActiveRecord::Base
-  has_many :children, as: :polymorphic_entity, class_name: PolymorphicChild
+  has_many :children, as: :polymorphic_thing, class_name: HasManyPolymorphicChild
 end
 
-class HasManyPolymorphicTest < Minitest::Unit::TestCase
+class HasManyPolymorphicTest < Minitest::Test
   def setup
     ActiveRecord::Base.descendants.each(&:delete_all)
   end
 
   def test_polymorphic
-    child = PolymorphicChild.create!
+    child = HasManyPolymorphicChild.create!
 
     irrelevant_entity = IrrelevantPolymorphicEntity.create!(children: [child])
-    relevant_entity = RelevantPolymorphicEntity.create!(id: irrelevant_entity.id)
+    _relevant_entity = RelevantPolymorphicEntity.create!(id: irrelevant_entity.id)
 
     result = RelevantPolymorphicEntity.where_exists(:children)
 

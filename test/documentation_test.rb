@@ -29,7 +29,7 @@ class Connection < ActiveRecord::Base
   belongs_to :group
 end
 
-class DocumentationTest < Minitest::Unit::TestCase
+class DocumentationTest < Minitest::Test
   def setup
     ActiveRecord::Base.descendants.each(&:delete_all)
   end
@@ -37,9 +37,9 @@ class DocumentationTest < Minitest::Unit::TestCase
   def test_readme
     group1 = Group.create!(name: 'first')
     group2 = Group.create!(name: 'second')
-    group3 = Group.create!(name: 'third')
+    _group3 = Group.create!(name: 'third')
 
-    group4 = Group.create!(name: 'fourth')
+    _group4 = Group.create!(name: 'fourth')
     group5 = Group.create!(name: 'fifth')
     group6 = Group.create!(name: 'sixth')
 

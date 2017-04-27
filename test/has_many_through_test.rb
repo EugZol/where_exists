@@ -44,7 +44,7 @@ end
 
 # Invoices ->  LineItems <- Tasks <- Project
 
-class HasManyThroughTest < Minitest::Unit::TestCase
+class HasManyThroughTest < Minitest::Test
   def setup
     ActiveRecord::Base.descendants.each(&:delete_all)
   end
@@ -56,8 +56,8 @@ class HasManyThroughTest < Minitest::Unit::TestCase
     task = Task.create!(project: project)
     irrelevant_task = Task.create!(project: irrelevant_project)
 
-    line_item = LineItem.create!(name: 'relevant', task: task)
-    irrelevant_line_item = LineItem.create!(name: 'irrelevant', task: irrelevant_task)
+    _line_item = LineItem.create!(name: 'relevant', task: task)
+    _irrelevant_line_item = LineItem.create!(name: 'irrelevant', task: irrelevant_task)
 
     result = Project.where_exists(:project_line_items, name: 'relevant')
 
@@ -79,8 +79,8 @@ class HasManyThroughTest < Minitest::Unit::TestCase
     invoice = Invoice.create!(name: 'relevant')
     irrelevant_invoice = Invoice.create!(name: 'irrelevant')
 
-    line_item = LineItem.create!(task: task, invoice: invoice)
-    irrelevant_line_item = LineItem.create!(task: irrelevant_task, invoice: irrelevant_invoice)
+    _line_item = LineItem.create!(task: task, invoice: invoice)
+    _irrelevant_line_item = LineItem.create!(task: irrelevant_task, invoice: irrelevant_invoice)
 
     result = Project.where_exists(:invoices, name: 'relevant')
 
