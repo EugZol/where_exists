@@ -123,7 +123,7 @@ module WhereExists
     select("1").
     joins(
       <<-SQL
-        INNER JOIN #{connection.quote(join_table)}
+        INNER JOIN #{connection.quote_table_name(join_table)}
         ON #{associated_ids} = #{associated_join_ids}
       SQL
     ).
