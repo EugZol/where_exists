@@ -23,8 +23,16 @@ module WhereExists
       queries = where_exists_for_belongs_to_query(association, where_parameters)
     when :has_many, :has_one
       queries = where_exists_for_has_many_query(association, where_parameters)
+    when :has_and_belongs_to_many
+      queries = where_exists_for_habtm_query(association, where_parameters)
     else
-      raise ArgumentError.new("where_exists: not supported association – #{association.macros.inspect}")
+      inspection = nil
+      begin
+        inspection = association.macros.inspect
+      rescue
+        inspection = association.macro
+      end
+      raise ArgumentError.new("where_exists: not supported association – #{inspection}")
     end
 
     if does_exist
@@ -95,6 +103,33 @@ module WhereExists
     else
       result = result.where(where_parameters)
     end
+
+    [result]
+  end
+
+  def where_exists_for_habtm_query(association, where_parameters)
+    associated_model = association.klass
+
+    primary_key = association.options[:primary_key] || self.primary_key
+
+    join_table = [self.table_name, associated_model.table_name].sort.join("_")
+
+    self_ids = quote_table_and_column_name(self.table_name, primary_key)
+    join_ids = quote_table_and_column_name(join_table, association.foreign_key)
+    associated_join_ids = quote_table_and_column_name(join_table, "#{associated_model.name.downcase}_id")
+    associated_ids = quote_table_and_column_name(associated_model.table_name, associated_model.primary_key)
+
+    result = associated_model.
+    select("1").
+    joins(
+      <<-SQL
+        INNER JOIN #{connection.quote(join_table)}
+        ON #{associated_ids} = #{associated_join_ids}
+      SQL
+    ).
+    where("#{join_ids} = #{self_ids}")
+
+    result = result.where(where_parameters)
 
     [result]
   end
