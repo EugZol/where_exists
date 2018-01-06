@@ -11,11 +11,12 @@ ActiveRecord::Migration.create_table :belongs_to_simple_entity_children, :force 
 end
 
 class BelongsToSimpleEntity < ActiveRecord::Base
-  has_many :simple_entity_children, primary_key: :my_id, foreign_key: :parent_id, class_name: "BelongsToSimpleEntityChild"
+  has_many :simple_entity_children, primary_key: :my_id, foreign_key: :parent_id, class_name: 'BelongsToSimpleEntityChild'
+  has_many :unnamed_children, -> { where name: nil }, primary_key: :my_id, foreign_key: :parent_id, class_name: 'BelongsToSimpleEntityChild'
 end
 
 class BelongsToSimpleEntityChild < ActiveRecord::Base
-  belongs_to :simple_entity, foreign_key: :parent_id, primary_key: :my_id, class_name: "BelongsToSimpleEntity"
+  belongs_to :simple_entity, foreign_key: :parent_id, primary_key: :my_id, class_name: 'BelongsToSimpleEntity'
 end
 
 class BelongsToTest < Minitest::Test
@@ -45,5 +46,19 @@ class BelongsToTest < Minitest::Test
 
     assert_equal 1, result.length
     assert_equal result.first.id, child.id
+  end
+
+  def test_with_parameters
+    wrong_child = BelongsToSimpleEntityChild.create!(name: 'wrong')
+    child = BelongsToSimpleEntityChild.create!(name: 'right')
+
+    _blank_entity = BelongsToSimpleEntity.create!(my_id: 999)
+    _wrong_entity = BelongsToSimpleEntity.create!(simple_entity_children: [wrong_child], my_id: 500)
+    entity = BelongsToSimpleEntity.create!(name: 'this field is irrelevant', simple_entity_children: [child], my_id: 300)
+
+    result = BelongsToSimpleEntity.where_exists(:simple_entity_children, name: 'right')
+
+    assert_equal 1, result.length
+    assert_equal result.first.id, entity.id
   end
 end

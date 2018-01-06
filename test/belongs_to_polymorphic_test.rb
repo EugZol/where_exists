@@ -19,11 +19,11 @@ class BelongsToPolymorphicChild < ActiveRecord::Base
 end
 
 class FirstPolymorphicEntity < ActiveRecord::Base
-  has_many :children, as: :polymorphic_entity, class_name: BelongsToPolymorphicChild
+  has_many :children, as: :polymorphic_entity, class_name: 'BelongsToPolymorphicChild'
 end
 
 class SecondPolymorphicEntity < ActiveRecord::Base
-  has_many :children, as: :polymorphic_entity, class_name: BelongsToPolymorphicChild
+  has_many :children, as: :polymorphic_entity, class_name: 'BelongsToPolymorphicChild'
 end
 
 class BelongsToPolymorphicTest < Minitest::Test

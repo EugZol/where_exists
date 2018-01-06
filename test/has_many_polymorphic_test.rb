@@ -19,11 +19,11 @@ class HasManyPolymorphicChild < ActiveRecord::Base
 end
 
 class RelevantPolymorphicEntity < ActiveRecord::Base
-  has_many :children, as: :polymorphic_thing, class_name: HasManyPolymorphicChild
+  has_many :children, as: :polymorphic_thing, class_name: 'HasManyPolymorphicChild'
 end
 
 class IrrelevantPolymorphicEntity < ActiveRecord::Base
-  has_many :children, as: :polymorphic_thing, class_name: HasManyPolymorphicChild
+  has_many :children, as: :polymorphic_thing, class_name: 'HasManyPolymorphicChild'
 end
 
 class HasManyPolymorphicTest < Minitest::Test

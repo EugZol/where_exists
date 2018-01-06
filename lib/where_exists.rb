@@ -5,7 +5,7 @@ module WhereExists
     where_exists_or_not_exists(true, association_name, where_parameters)
   end
 
-  def where_not_exists(association_name, where_parameters = {})
+  def where_not_exists(association_name, *where_parameters)
     where_exists_or_not_exists(false, association_name, where_parameters)
   end
 
@@ -33,8 +33,6 @@ module WhereExists
       not_string = "NOT "
     end
 
-    #queries.map!{|query| query.select(ActiveRecord::FinderMethods::ONE_AS_ONE).where(where_parameters)}
-
     queries_sql = queries.map{|query| "EXISTS (" + query.to_sql + ")"}.join(" OR ")
 
     self.where("#{not_string}(#{queries_sql})")
@@ -42,6 +40,8 @@ module WhereExists
 
   def where_exists_for_belongs_to_query(association, where_parameters)
     polymorphic = association.options[:polymorphic].present?
+
+    association_scope = association.scope
 
     if polymorphic
       associated_models = self.select("DISTINCT #{connection.quote_column_name(association.foreign_type)}").pluck(association.foreign_type).map(&:constantize)
@@ -57,7 +57,13 @@ module WhereExists
     associated_models.each do |associated_model|
       primary_key = association.options[:primary_key] || associated_model.primary_key
       other_ids = quote_table_and_column_name(associated_model.table_name, primary_key)
-      query = associated_model.select("1").where("#{self_ids} = #{other_ids}").where(where_parameters)
+      query = associated_model.select("1").where("#{self_ids} = #{other_ids}")
+      if where_parameters != []
+        query = query.where(*where_parameters)
+      end
+      if association_scope
+        result = result.instance_exec(&association_scope)
+      end
       if polymorphic
         other_type = connection.quote(associated_model.name)
         query = query.where("#{self_type} = #{other_type}")
@@ -97,9 +103,11 @@ module WhereExists
     end
 
     if through
-      result = result.where_exists(next_association.name, where_parameters)
+      result = result.where_exists(next_association.name, *where_parameters)
     else
-      result = result.where(where_parameters)
+      if where_parameters != []
+        result = result.where(*where_parameters)
+      end
     end
 
     [result]

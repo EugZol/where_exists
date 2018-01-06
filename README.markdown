@@ -29,7 +29,7 @@ Syntax:
 Model.where_exists(association, additional_finder_parameters)
 ```
 
-Supported Rails versions: >= 3.2.22.
+Supported Rails versions: >= 4.2.
 
 ## Example of usage
 
@@ -122,6 +122,14 @@ User.where_not_exists(:groups)
 
 **Q**: Does it support multi-level (recursive) `:through` associations?<br>
 **A**: You bet. (Now you can forget complex EXISTS or JOIN statetements in a pretty wide variety of similar cases.)
+
+
+**Q**: Does it support `where` parameters with interpolation, e.g. `parent.where_exists(:child, 'fieldA > ?', 1)`?<br>
+**A**: Yes.
+
+
+**Q**: Does it take into account default association condition, e.g. `has_many :drafts, -> { where published: nil }`?<br>
+**A**: Yes.
 
 ## Contributing
 
