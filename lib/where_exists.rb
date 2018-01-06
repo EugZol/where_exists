@@ -1,7 +1,7 @@
 require 'active_record'
 
 module WhereExists
-  def where_exists(association_name, where_parameters = {})
+  def where_exists(association_name, *where_parameters)
     where_exists_or_not_exists(true, association_name, where_parameters)
   end
 
