@@ -19,6 +19,7 @@ end
 
 class Invoice < ActiveRecord::Base
   has_and_belongs_to_many :tasks
+  has_and_belongs_to_many :unnamed_tasks, -> { where(name: nil) }
 end
 
 # Invoices ->  LineItems <- Tasks <- Project
@@ -59,7 +60,6 @@ class HasAndBelongsToManyTest < Minitest::Test
 
     task.connected_invoices << invoice
 
-
     result = Task.where_exists(:connected_invoices, name: 'invoice')
 
     assert_equal 1, result.length
@@ -75,5 +75,18 @@ class HasAndBelongsToManyTest < Minitest::Test
 
     result = Task.where_not_exists(:connected_invoices, name: 'invoice_2')
     assert_equal 2, result.length
+  end
+
+  def test_with_condition
+    task_1 = Task.create! name: nil
+    task_2 = Task.create! name: 'task 2'
+
+    invoice_1 = Invoice.create!(tasks: [task_1])
+    invoice_2 = Invoice.create!(tasks: [task_1, task_2])
+    invoice_3 = Invoice.create!(tasks: [task_2)
+
+    result_ids = Invoice.where_exists(:unnamed_tasks).pluck(:id)
+
+    assert_equal [invoice_1.id, invoice_2.id].sort, result_ids.sort
   end
 end

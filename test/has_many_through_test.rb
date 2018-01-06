@@ -91,5 +91,10 @@ class HasManyThroughTest < Minitest::Test
 
     assert_equal 1, result.length
     assert_equal irrelevant_project.id, result.first.id
+
+    result = Project.where_not_exists(:invoices, "name = ?", 'relevant')
+
+    assert_equal 1, result.length
+    assert_equal irrelevant_project.id, result.first.id
   end
 end

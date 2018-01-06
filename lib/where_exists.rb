@@ -41,7 +41,7 @@ module WhereExists
       not_string = "NOT "
     end
 
-    queries_sql = queries.map{|query| "EXISTS (" + query.to_sql + ")"}.join(" OR ")
+    queries_sql = queries.map { |query| "EXISTS (" + query.to_sql + ")" }.join(" OR ")
 
     self.where("#{not_string}(#{queries_sql})")
   end
@@ -70,7 +70,7 @@ module WhereExists
         query = query.where(*where_parameters)
       end
       if association_scope
-        result = result.instance_exec(&association_scope)
+        query = query.instance_exec(&association_scope)
       end
       if polymorphic
         other_type = connection.quote(associated_model.name)
@@ -100,10 +100,6 @@ module WhereExists
 
     result = associated_model.select("1").where("#{associated_ids} = #{self_ids}")
 
-    if association_scope
-      result = result.instance_exec(&association_scope)
-    end
-
     if association.options[:as]
       other_types = quote_table_and_column_name(associated_model.table_name, association.type)
       self_class = connection.quote(self.name)
@@ -111,17 +107,22 @@ module WhereExists
     end
 
     if through
-      result = result.where_exists(next_association.name, *where_parameters)
-    else
-      if where_parameters != []
-        result = result.where(*where_parameters)
-      end
+      return [result.where_exists(next_association.name, *where_parameters)]
+    end
+
+    if where_parameters != []
+      result = result.where(*where_parameters)
+    end
+    if association_scope
+      result = result.instance_exec(&association_scope)
     end
 
     [result]
   end
 
   def where_exists_for_habtm_query(association, where_parameters)
+    association_scope = association.scope
+
     associated_model = association.klass
 
     primary_key = association.options[:primary_key] || self.primary_key
@@ -133,17 +134,23 @@ module WhereExists
     associated_join_ids = quote_table_and_column_name(join_table, "#{associated_model.name.downcase}_id")
     associated_ids = quote_table_and_column_name(associated_model.table_name, associated_model.primary_key)
 
-    result = associated_model.
-    select("1").
-    joins(
-      <<-SQL
-        INNER JOIN #{connection.quote_table_name(join_table)}
-        ON #{associated_ids} = #{associated_join_ids}
-      SQL
-    ).
-    where("#{join_ids} = #{self_ids}")
+    result =
+      associated_model.
+      select("1").
+      joins(
+        <<-SQL
+          INNER JOIN #{connection.quote_table_name(join_table)}
+          ON #{associated_ids} = #{associated_join_ids}
+        SQL
+      ).
+      where("#{join_ids} = #{self_ids}")
 
-    result = result.where(where_parameters)
+    if where_parameters != []
+      result = result.where(*where_parameters)
+    end
+    if association_scope
+      result = result.instance_exec(&association_scope)
+    end
 
     [result]
   end
