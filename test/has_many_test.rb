@@ -12,6 +12,7 @@ end
 
 class SimpleEntity < ActiveRecord::Base
   has_many :simple_entity_children, primary_key: :my_id, foreign_key: :parent_id
+  has_many :unnamed_children, -> { where name: nil }, primary_key: :my_id, foreign_key: :parent_id, class_name: 'SimpleEntityChild'
 end
 
 class SimpleEntityChild < ActiveRecord::Base
@@ -57,6 +58,22 @@ class HasManyTest < Minitest::Test
 
     assert_equal 1, result.length
     assert_equal result.first.id, entity.id
+  end
+
+  def test_with_condition
+    child_1 = SimpleEntityChild.create! name: nil
+    child_2 = SimpleEntityChild.create! name: 'Luke'
+
+    entity_1 = SimpleEntity.create!(simple_entity_children: [child_1], my_id: 999)
+    entity_2 = SimpleEntity.create!(simple_entity_children: [child_2], my_id: 500)
+
+    result = SimpleEntity.unscoped.where_exists(:unnamed_children)
+    assert_equal 1, result.length
+    assert_equal result.first.id, entity_1.id
+
+    result = SimpleEntity.unscoped.where_not_exists(:unnamed_children)
+    assert_equal 1, result.length
+    assert_equal result.first.id, entity_2.id
   end
 
   def test_not_exists

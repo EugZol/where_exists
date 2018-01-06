@@ -71,6 +71,8 @@ module WhereExists
   def where_exists_for_has_many_query(association, where_parameters)
     through = association.options[:through].present?
 
+    association_scope = association.scope
+
     if through
       next_association = association.source_reflection
       association = association.through_reflection
@@ -83,6 +85,10 @@ module WhereExists
     associated_ids = quote_table_and_column_name(associated_model.table_name, association.foreign_key)
 
     result = associated_model.select("1").where("#{associated_ids} = #{self_ids}")
+
+    if association_scope
+      result = result.instance_exec(&association_scope)
+    end
 
     if association.options[:as]
       other_types = quote_table_and_column_name(associated_model.table_name, association.type)
