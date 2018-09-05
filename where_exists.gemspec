@@ -20,5 +20,7 @@ Gem::Specification.new do |s|
   s.add_dependency "rails", ">= 4.2", "< 6"
 
   s.add_development_dependency "sqlite3", "~> 1.3"
-  s.add_development_dependency "minitest"
+  s.add_development_dependency "minitest", "~> 5.10"
+  s.add_development_dependency "rake", "~> 12.3"
+  s.add_development_dependency "rdoc", "~> 6.0"
 end

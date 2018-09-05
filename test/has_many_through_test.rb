@@ -1,4 +1,4 @@
-require 'test_helper'
+require_relative 'test_helper'
 
 ActiveRecord::Migration.create_table :projects, :force => true do |t|
   t.string :name
@@ -15,6 +15,11 @@ ActiveRecord::Migration.create_table :line_items, :force => true do |t|
   t.integer :task_id
 end
 
+ActiveRecord::Migration.create_table :work_details, :force => true do |t|
+  t.string :name
+  t.integer :line_item_id
+end
+
 ActiveRecord::Migration.create_table :invoices, :force => true do |t|
   t.string :name
 end
@@ -23,6 +28,7 @@ class Project < ActiveRecord::Base
   has_many :tasks
   has_many :invoices, :through => :tasks
   has_many :project_line_items, :through => :tasks, :source => :line_items
+  has_many :work_details, :through => :project_line_items
 end
 
 class Task < ActiveRecord::Base
@@ -35,6 +41,11 @@ end
 class LineItem < ActiveRecord::Base
   belongs_to :invoice
   belongs_to :task
+  has_many :work_details
+end
+
+class WorkDetail < ActiveRecord::Base
+  belongs_to :line_item
 end
 
 class Invoice < ActiveRecord::Base
@@ -50,6 +61,8 @@ class HasManyThroughTest < Minitest::Test
   end
 
   def test_one_level_through
+    ActiveRecord::Base.descendants.each(&:delete_all)
+
     project = Project.create!
     irrelevant_project = Project.create!
 
@@ -70,8 +83,10 @@ class HasManyThroughTest < Minitest::Test
   end
 
   def test_deep_through
-    project = Project.create!
-    irrelevant_project = Project.create!
+    ActiveRecord::Base.descendants.each(&:delete_all)
+
+    project = Project.create! name: 'relevant'
+    irrelevant_project = Project.create! name: 'irrelevant'
 
     task = Task.create!(project: project)
     irrelevant_task = Task.create!(project: irrelevant_project)
@@ -79,8 +94,11 @@ class HasManyThroughTest < Minitest::Test
     invoice = Invoice.create!(name: 'relevant')
     irrelevant_invoice = Invoice.create!(name: 'irrelevant')
 
-    _line_item = LineItem.create!(task: task, invoice: invoice)
-    _irrelevant_line_item = LineItem.create!(task: irrelevant_task, invoice: irrelevant_invoice)
+    line_item = LineItem.create!(task: task, invoice: invoice)
+    irrelevant_line_item = LineItem.create!(task: irrelevant_task, invoice: irrelevant_invoice)
+
+    _work_detail = WorkDetail.create!(line_item: line_item, name: 'relevant')
+    _irrelevant_work_detail = WorkDetail.create!(line_item: irrelevant_line_item, name: 'irrelevant')
 
     result = Project.where_exists(:invoices, name: 'relevant')
 
@@ -93,6 +111,16 @@ class HasManyThroughTest < Minitest::Test
     assert_equal irrelevant_project.id, result.first.id
 
     result = Project.where_not_exists(:invoices, "name = ?", 'relevant')
+
+    assert_equal 1, result.length
+    assert_equal irrelevant_project.id, result.first.id
+
+    result = Project.where_exists(:work_details, name: 'relevant')
+
+    assert_equal 1, result.length
+    assert_equal project.id, result.first.id
+
+    result = Project.where_not_exists(:work_details, name: 'relevant')
 
     assert_equal 1, result.length
     assert_equal irrelevant_project.id, result.first.id
