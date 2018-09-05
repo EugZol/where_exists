@@ -146,3 +146,9 @@ To run tests: `bundle exec rake test`
 ## License
 
 This project uses MIT license. See [`MIT-LICENSE`](https://github.com/EugZol/where_exists/blob/master/MIT-LICENSE) file for full text.
+
+## Alternatives
+
+One known alternative is https://github.com/MaxLap/activerecord_where_assoc
+
+A comprehensive comparison is made by MaxLap here: https://github.com/MaxLap/activerecord_where_assoc/blob/master/ALTERNATIVES_PROBLEMS.md
