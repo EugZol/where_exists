@@ -141,6 +141,8 @@ Also,
 * Submit pull request with new features or bug fixes
 * Enhance or clarify the documentation that you are reading
 
+To run tests: `bundle exec rake test`
+
 ## License
 
 This project uses MIT license. See [`MIT-LICENSE`](https://github.com/EugZol/where_exists/blob/master/MIT-LICENSE) file for full text.

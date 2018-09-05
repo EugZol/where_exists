@@ -12,10 +12,22 @@ module WhereExists
   protected
 
   def where_exists_or_not_exists(does_exist, association_name, where_parameters)
+    queries_sql = build_exists_string(association_name, *where_parameters)
+
+    if does_exist
+      not_string = ""
+    else
+      not_string = "NOT "
+    end
+
+    self.where("#{not_string}(#{queries_sql})")
+  end
+
+  def build_exists_string(association_name, *where_parameters)
     association = self.reflect_on_association(association_name)
 
     unless association
-      raise ArgumentError.new("where_exists: association #{association_name.inspect} not found on #{self.name}")
+      raise ArgumentError.new("where_exists: association - #{association_name} - #{association_name.inspect} not found on #{self.name}")
     end
 
     case association.macro
@@ -34,16 +46,7 @@ module WhereExists
       end
       raise ArgumentError.new("where_exists: not supported association – #{inspection}")
     end
-
-    if does_exist
-      not_string = ""
-    else
-      not_string = "NOT "
-    end
-
     queries_sql = queries.map { |query| "EXISTS (" + query.to_sql + ")" }.join(" OR ")
-
-    self.where("#{not_string}(#{queries_sql})")
   end
 
   def where_exists_for_belongs_to_query(association, where_parameters)
@@ -82,15 +85,33 @@ module WhereExists
     queries
   end
 
-  def where_exists_for_has_many_query(association, where_parameters)
-    through = association.options[:through].present?
-
-    association_scope = association.scope
-
-    if through
-      next_association = association.source_reflection
+  def where_exists_for_has_many_query(association, where_parameters, next_association = {})
+    if association.through_reflection
+      raise ArgumentError.new(association) unless association.source_reflection
+      next_association = {
+        association: association.source_reflection,
+        params: where_parameters,
+        next_association: next_association
+      }
       association = association.through_reflection
+
+      case association.macro
+      when :has_many, :has_one
+        return where_exists_for_has_many_query(association, {}, next_association)
+      when :has_and_belongs_to_many
+        return where_exists_for_habtm_query(association, {}, next_association)
+      else
+        inspection = nil
+        begin
+          inspection = association.macros.inspect
+        rescue
+          inspection = association.macro
+        end
+        raise ArgumentError.new("where_exists: not supported association – #{inspection}")
+      end
     end
+
+    association_scope = next_association[:scope] || association.scope
 
     associated_model = association.klass
     primary_key = association.options[:primary_key] || self.primary_key
@@ -106,13 +127,14 @@ module WhereExists
       result = result.where("#{other_types} = #{self_class}")
     end
 
-    if through
-      return [result.where_exists(next_association.name, *where_parameters)]
+    if next_association[:association]
+      return loop_nested_association(result, next_association)
     end
 
     if where_parameters != []
       result = result.where(*where_parameters)
     end
+
     if association_scope
       result = result.instance_exec(&association_scope)
     end
@@ -120,7 +142,7 @@ module WhereExists
     [result]
   end
 
-  def where_exists_for_habtm_query(association, where_parameters)
+  def where_exists_for_habtm_query(association, where_parameters, next_association = {})
     association_scope = association.scope
 
     associated_model = association.klass
@@ -145,14 +167,41 @@ module WhereExists
       ).
       where("#{join_ids} = #{self_ids}")
 
+    if next_association[:association]
+      return loop_nested_association(result, next_association)
+    end
+
     if where_parameters != []
       result = result.where(*where_parameters)
     end
+
     if association_scope
       result = result.instance_exec(&association_scope)
     end
 
     [result]
+  end
+
+  def loop_nested_association(query, next_association = {}, nested = false)
+    str = query.klass.build_exists_string(
+      next_association[:association].name,
+      *[
+        *next_association[:params]
+      ],
+    )
+
+    if next_association[:next_association] && next_association[:next_association][:association]
+      subq = str.match(/\([^\(\)]+\)/mi)[0]
+      str.sub!(subq,
+        "(#{subq} AND (#{loop_nested_association(
+          next_association[:association],
+          next_association[:next_association],
+          true
+        )}))"
+      )
+    end
+
+    nested ? str : [query.where(str)]
   end
 
   def quote_table_and_column_name(table_name, column_name)
