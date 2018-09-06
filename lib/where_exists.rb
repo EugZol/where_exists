@@ -1,18 +1,18 @@
 require 'active_record'
 
 module WhereExists
-  def where_exists(association_name, *where_parameters)
-    where_exists_or_not_exists(true, association_name, where_parameters)
+  def where_exists(association_name, *where_parameters, &block)
+    where_exists_or_not_exists(true, association_name, where_parameters, &block)
   end
 
-  def where_not_exists(association_name, *where_parameters)
-    where_exists_or_not_exists(false, association_name, where_parameters)
+  def where_not_exists(association_name, *where_parameters, &block)
+    where_exists_or_not_exists(false, association_name, where_parameters, &block)
   end
 
   protected
 
-  def where_exists_or_not_exists(does_exist, association_name, where_parameters)
-    queries_sql = build_exists_string(association_name, *where_parameters)
+  def where_exists_or_not_exists(does_exist, association_name, where_parameters, &block)
+    queries_sql = build_exists_string(association_name, *where_parameters, &block)
 
     if does_exist
       not_string = ""
@@ -23,7 +23,7 @@ module WhereExists
     self.where("#{not_string}(#{queries_sql})")
   end
 
-  def build_exists_string(association_name, *where_parameters)
+  def build_exists_string(association_name, *where_parameters, &block)
     association = self.reflect_on_association(association_name)
 
     unless association
@@ -46,7 +46,11 @@ module WhereExists
       end
       raise ArgumentError.new("where_exists: not supported association – #{inspection}")
     end
-    queries_sql = queries.map { |query| "EXISTS (" + query.to_sql + ")" }.join(" OR ")
+
+    queries_sql = queries.map { |query|
+      query = yield query if block_given?
+      "EXISTS (" + query.to_sql + ")"
+    }.join(" OR ")
   end
 
   def where_exists_for_belongs_to_query(association, where_parameters)

@@ -7,6 +7,7 @@ end
 
 ActiveRecord::Migration.create_table :simple_entity_children, :force => true do |t|
   t.integer :parent_id
+  t.datetime :my_date
   t.string :name
 end
 
@@ -86,5 +87,20 @@ class HasManyTest < Minitest::Test
 
     assert_equal 1, result.length
     assert_equal result.first.id, blank_entity.id
+  end
+
+  def test_dynamic_scopes
+    child_past = SimpleEntityChild.create! my_date: Time.now - 1.minute
+    child_future = SimpleEntityChild.create! my_date: Time.now + 1.minute
+
+    _blank_entity = SimpleEntity.create!(simple_entity_children: [child_future], my_id: 999)
+    filled_entity = SimpleEntity.create!(simple_entity_children: [child_past], my_id: 500)
+
+    result = SimpleEntity.where_exists(:simple_entity_children) {|scope|
+      scope.where('my_date < ?', Time.now)
+    }
+
+    assert_equal 1, result.length
+    assert_equal result.first.id, filled_entity.id
   end
 end
