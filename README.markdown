@@ -110,6 +110,20 @@ User.where_not_exists(:groups)
 
 <sub><sup>Adding parameters (the second argument) to `where_not_exists` method is feasible as well, if you have such requirements.</sup></sub>
 
+
+> Re-use existing scopes
+
+```ruby
+User.where_exists(:groups) {|groups_scope|
+  groups_scope.activated_since(Time.now)
+}
+
+User.where_exists(:groups, &:approved)
+```
+<sub><sup>If you pass a block to `where_exists`, the scope of the relation will be yielded to your block so you can re-use existing scopes.</sup></sub>
+
+
+
 ## Additional capabilities
 
 **Q**: Does it support both `has_many` and `belongs_to` association type?<br>
