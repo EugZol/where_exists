@@ -114,9 +114,9 @@ User.where_not_exists(:groups)
 > Re-use existing scopes
 
 ```ruby
-User.where_exists(:groups) {|groups_scope|
+User.where_exists(:groups) do |groups_scope|
   groups_scope.activated_since(Time.now)
-}
+end
 
 User.where_exists(:groups, &:approved)
 ```

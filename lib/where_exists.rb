@@ -47,10 +47,12 @@ module WhereExists
       raise ArgumentError.new("where_exists: not supported association – #{inspection}")
     end
 
-    queries_sql = queries.map { |query|
-      query = yield query if block_given?
-      "EXISTS (" + query.to_sql + ")"
-    }.join(" OR ")
+    queries_sql =
+      queries.map do |query|
+        query = yield query if block_given?
+        "EXISTS (" + query.to_sql + ")"
+      end
+    queries_sql.join(" OR ")
   end
 
   def where_exists_for_belongs_to_query(association, where_parameters)
