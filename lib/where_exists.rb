@@ -198,13 +198,13 @@ module WhereExists
 
     if next_association[:next_association] && next_association[:next_association][:association]
       subq = str.match(/\([^\(\)]+\)/mi)[0]
-      str.sub!(subq,
+      str.sub!(subq) do
         "(#{subq} AND (#{loop_nested_association(
           next_association[:association],
           next_association[:next_association],
           true
         )}))"
-      )
+      end
     end
 
     nested ? str : [query.where(str)]
