@@ -61,7 +61,9 @@ module WhereExists
     association_scope = association.scope
 
     if polymorphic
-      associated_models = self.select("DISTINCT #{connection.quote_column_name(association.foreign_type)}").pluck(association.foreign_type).map(&:constantize)
+      associated_models = self.select("DISTINCT #{connection.quote_column_name(association.foreign_type)}").
+        where("#{connection.quote_column_name(association.foreign_type)} IS NOT NULL").pluck(association.foreign_type).
+        uniq.map(&:classify).map(&:constantize)
     else
       associated_models = [association.klass]
     end
@@ -82,8 +84,10 @@ module WhereExists
         query = query.instance_exec(&association_scope)
       end
       if polymorphic
-        other_type = connection.quote(associated_model.name)
-        query = query.where("#{self_type} = #{other_type}")
+        other_types = [associated_model.name, associated_model.table_name]
+        other_types << associated_model.polymorphic_name if associated_model.respond_to?(:polymorphic_name)
+
+        query = query.where("#{self_type} IN (?)", other_types.uniq)
       end
       queries.push query
     end
@@ -129,8 +133,14 @@ module WhereExists
 
     if association.options[:as]
       other_types = quote_table_and_column_name(associated_model.table_name, association.type)
-      self_class = connection.quote(self.name)
-      result = result.where("#{other_types} = #{self_class}")
+      class_values = [self.name, self.table_name]
+      class_values << self.polymorphic_name if associated_model.respond_to?(:polymorphic_name)
+
+      result = result.where("#{other_types} IN (?)", class_values.uniq)
+    end
+
+    if association_scope
+      result = result.instance_exec(&association_scope)
     end
 
     if next_association[:association]
@@ -139,10 +149,6 @@ module WhereExists
 
     if where_parameters != []
       result = result.where(*where_parameters)
-    end
-
-    if association_scope
-      result = result.instance_exec(&association_scope)
     end
 
     [result]
@@ -155,11 +161,9 @@ module WhereExists
 
     primary_key = association.options[:primary_key] || self.primary_key
 
-    join_table = [self.table_name, associated_model.table_name].sort.join("_")
-
     self_ids = quote_table_and_column_name(self.table_name, primary_key)
-    join_ids = quote_table_and_column_name(join_table, association.foreign_key)
-    associated_join_ids = quote_table_and_column_name(join_table, "#{associated_model.name.downcase}_id")
+    join_ids = quote_table_and_column_name(association.join_table, association.foreign_key)
+    associated_join_ids = quote_table_and_column_name(association.join_table, association.association_foreign_key)
     associated_ids = quote_table_and_column_name(associated_model.table_name, associated_model.primary_key)
 
     result =
@@ -167,7 +171,7 @@ module WhereExists
       select("1").
       joins(
         <<-SQL
-          INNER JOIN #{connection.quote_table_name(join_table)}
+          INNER JOIN #{connection.quote_table_name(association.join_table)}
           ON #{associated_ids} = #{associated_join_ids}
         SQL
       ).

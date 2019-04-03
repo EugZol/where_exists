@@ -35,10 +35,17 @@ class HasManyPolymorphicTest < Minitest::Test
     child = HasManyPolymorphicChild.create!
 
     irrelevant_entity = IrrelevantPolymorphicEntity.create!(children: [child])
-    _relevant_entity = RelevantPolymorphicEntity.create!(id: irrelevant_entity.id)
+    relevant_entity = RelevantPolymorphicEntity.create!(id: irrelevant_entity.id)
+
+    assert_equal 0, RelevantPolymorphicEntity.where_exists(:children).length
+    assert_equal 1, IrrelevantPolymorphicEntity.where_exists(:children).length
+
+    child.update!(polymorphic_thing_type: RelevantPolymorphicEntity.table_name)
 
     result = RelevantPolymorphicEntity.where_exists(:children)
 
-    assert_equal 0, result.length
+    assert_equal 0, IrrelevantPolymorphicEntity.where_exists(:children).length
+    assert_equal 1, result.length
+    assert_equal relevant_entity.id, result.first&.id
   end
 end
