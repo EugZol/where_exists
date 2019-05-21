@@ -161,11 +161,9 @@ module WhereExists
 
     primary_key = association.options[:primary_key] || self.primary_key
 
-    join_table = [self.table_name, associated_model.table_name].sort.join("_")
-
     self_ids = quote_table_and_column_name(self.table_name, primary_key)
-    join_ids = quote_table_and_column_name(join_table, association.foreign_key)
-    associated_join_ids = quote_table_and_column_name(join_table, "#{associated_model.name.downcase}_id")
+    join_ids = quote_table_and_column_name(association.join_table, association.foreign_key)
+    associated_join_ids = quote_table_and_column_name(association.join_table, association.association_foreign_key)
     associated_ids = quote_table_and_column_name(associated_model.table_name, associated_model.primary_key)
 
     result =
@@ -173,7 +171,7 @@ module WhereExists
       select("1").
       joins(
         <<-SQL
-          INNER JOIN #{connection.quote_table_name(join_table)}
+          INNER JOIN #{connection.quote_table_name(association.join_table)}
           ON #{associated_ids} = #{associated_join_ids}
         SQL
       ).
