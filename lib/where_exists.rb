@@ -139,16 +139,16 @@ module WhereExists
       result = result.where("#{other_types} IN (?)", class_values.uniq)
     end
 
+    if association_scope
+      result = result.instance_exec(&association_scope)
+    end
+
     if next_association[:association]
       return loop_nested_association(result, next_association)
     end
 
     if where_parameters != []
       result = result.where(*where_parameters)
-    end
-
-    if association_scope
-      result = result.instance_exec(&association_scope)
     end
 
     [result]

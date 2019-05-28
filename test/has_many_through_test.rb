@@ -1,34 +1,71 @@
 require_relative 'test_helper'
 
-ActiveRecord::Migration.create_table :projects, :force => true do |t|
+ActiveRecord::Migration.create_table :projects, force: true do |t|
   t.string :name
 end
 
-ActiveRecord::Migration.create_table :tasks, :force => true do |t|
+ActiveRecord::Migration.create_table :tasks, force: true do |t|
   t.string :name
   t.integer :project_id
 end
 
-ActiveRecord::Migration.create_table :line_items, :force => true do |t|
+ActiveRecord::Migration.create_table :line_items, force: true do |t|
   t.string :name
   t.integer :invoice_id
   t.integer :task_id
 end
 
-ActiveRecord::Migration.create_table :work_details, :force => true do |t|
+ActiveRecord::Migration.create_table :work_details, force: true do |t|
   t.string :name
   t.integer :line_item_id
 end
 
-ActiveRecord::Migration.create_table :invoices, :force => true do |t|
+ActiveRecord::Migration.create_table :invoices, force: true do |t|
   t.string :name
 end
+
+ActiveRecord::Migration.create_table :blobs, force: true  do |t|
+end
+
+ActiveRecord::Migration.create_table :attachments, force: true  do |t|
+  t.string     :name,     null: false
+  t.references :record,   null: false, polymorphic: true, index: false
+  t.references :blob,     null: false
+
+  t.datetime :created_at, null: false
+
+  t.index [ :record_type, :record_id, :name, :blob_id ], name: "index_attachments_uniqueness", unique: true
+end
+
+class Attachment < ActiveRecord::Base
+  belongs_to :record, polymorphic: true, touch: true
+  belongs_to :blob
+end
+
+class Blob < ActiveRecord::Base
+  has_many :attachments
+
+  scope :unattached, -> { left_joins(:attachments).where(Attachment.table_name => { blob_id: nil }) }
+
+  before_destroy(prepend: true) do
+    raise ActiveRecord::InvalidForeignKey if attachments.exists?
+  end
+end
+
+
 
 class Project < ActiveRecord::Base
   has_many :tasks
   has_many :invoices, :through => :tasks
   has_many :project_line_items, :through => :tasks, :source => :line_items
   has_many :work_details, :through => :project_line_items
+
+  has_many :attachments, as: :record
+  has_many :blobs, through: :attachments, source: :blob
+  has_many :relevant_attachments, -> { where(name: "relevant") }, as: :record, class_name: "Attachment", inverse_of: :record, dependent: false
+  has_many :relevant_blobs, through: :relevant_attachments, class_name: "Blob", source: :blob
+  has_many :irrelevant_attachments, -> { where(name: "irrelevant") }, as: :record, class_name: "Attachment", inverse_of: :record, dependent: false
+  has_many :irrelevant_blobs, through: :irrelevant_attachments, class_name: "Blob", source: :blob
 end
 
 class Task < ActiveRecord::Base
@@ -36,6 +73,7 @@ class Task < ActiveRecord::Base
 
   has_many :invoices, :through => :line_items
   has_many :line_items
+  has_many :scoped_line_items, -> { where(name: 'relevant') }, class_name: 'LineItem'
 end
 
 class LineItem < ActiveRecord::Base
@@ -94,11 +132,15 @@ class HasManyThroughTest < Minitest::Test
     invoice = Invoice.create!(name: 'relevant')
     irrelevant_invoice = Invoice.create!(name: 'irrelevant')
 
-    line_item = LineItem.create!(task: task, invoice: invoice)
-    irrelevant_line_item = LineItem.create!(task: irrelevant_task, invoice: irrelevant_invoice)
+    line_item = LineItem.create!(name: 'relevant', task: task, invoice: invoice)
+    irrelevant_line_item = LineItem.create!(name: 'relevant', task: irrelevant_task, invoice: irrelevant_invoice)
 
     _work_detail = WorkDetail.create!(line_item: line_item, name: 'relevant')
     _irrelevant_work_detail = WorkDetail.create!(line_item: irrelevant_line_item, name: 'irrelevant')
+
+    blob = Blob.create!()
+    _relevant_attachment = Attachment.create!(name: 'relevant', blob: blob, record: project)
+    _irrelevant_attachment = Attachment.create!(name: 'irrelevant', blob: blob, record: irrelevant_project)
 
     result = Project.where_exists(:invoices, name: 'relevant')
 
@@ -124,5 +166,28 @@ class HasManyThroughTest < Minitest::Test
 
     assert_equal 1, result.length
     assert_equal irrelevant_project.id, result.first.id
+
+    result = Task.where_exists(:scoped_line_items)
+
+    assert_equal 2, result.length
+
+    result = Project.where_exists(:relevant_blobs)
+
+    assert_equal 1, result.length
+    assert_equal project.id, result.first.id
+
+    result = Project.where_not_exists(:relevant_blobs)
+
+    assert_equal 1, result.length
+    assert_equal irrelevant_project.id, result.first.id
+
+    result = Project.where_exists(:blobs)
+
+    assert_equal 2, result.length
+
+    result = Project.where_not_exists(:blobs)
+
+    assert_equal 0, result.length
+
   end
 end
