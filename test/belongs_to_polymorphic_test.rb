@@ -61,6 +61,18 @@ class BelongsToPolymorphicTest < Minitest::Test
     assert_equal orphaned_child.id, result.first.id
   end
 
+  def test_no_entities_or_empty_child_relation
+    result = BelongsToPolymorphicChild.where_not_exists(:polymorphic_entity)
+    assert_equal 0, result.length
+
+    _first_child = BelongsToPolymorphicChild.create!
+    result = BelongsToPolymorphicChild.where_not_exists(:polymorphic_entity)
+    assert_equal 1, result.length
+
+    result = BelongsToPolymorphicChild.where_exists(:polymorphic_entity)
+    assert_equal 0, result.length
+  end
+
   def test_table_name_based_lookup
     first_entity = FirstPolymorphicEntity.create!
     second_entity = SecondPolymorphicEntity.create! id: first_entity.id + 1

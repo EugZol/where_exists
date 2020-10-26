@@ -20,7 +20,11 @@ module WhereExists
       not_string = "NOT "
     end
 
-    self.where("#{not_string}(#{queries_sql})")
+    if queries_sql.empty?
+      does_exist ? self.none : self.all
+    else
+      self.where("#{not_string}(#{queries_sql})")
+    end
   end
 
   def build_exists_string(association_name, *where_parameters, &block)
