@@ -14,12 +14,12 @@ Gem::Specification.new do |s|
   s.description = 'Rails way to harness the power of SQL "EXISTS" statement'
   s.license     = "MIT"
 
-  s.files = Dir["lib/**/*", "MIT-LICENSE", "Rakefile", "README.markdownq"]
+  s.files = Dir["lib/**/*", "MIT-LICENSE", "Rakefile", "README.markdown"]
   s.test_files = Dir["test/**/*"]
 
   s.add_dependency "rails", ">= 4.2", "< 6.2"
 
-  s.add_development_dependency "sqlite3", "~> 1.3"
+  s.add_development_dependency "sqlite3", "~> 1.4"
   s.add_development_dependency "minitest", "~> 5.10"
   s.add_development_dependency "rake", "~> 12.3"
   s.add_development_dependency "rdoc", "~> 6.0"
