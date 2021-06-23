@@ -36,11 +36,11 @@ module WhereExists
 
     case association.macro
     when :belongs_to
-      queries = where_exists_for_belongs_to_query(association, where_parameters)
+      queries = where_exists_for_belongs_to_query(association, where_parameters, &block)
     when :has_many, :has_one
-      queries = where_exists_for_has_many_query(association, where_parameters)
+      queries = where_exists_for_has_many_query(association, where_parameters, &block)
     when :has_and_belongs_to_many
-      queries = where_exists_for_habtm_query(association, where_parameters)
+      queries = where_exists_for_habtm_query(association, where_parameters, &block)
     else
       inspection = nil
       begin
@@ -53,13 +53,12 @@ module WhereExists
 
     queries_sql =
       queries.map do |query|
-        query = yield query if block_given?
         "EXISTS (" + query.to_sql + ")"
       end
     queries_sql.join(" OR ")
   end
 
-  def where_exists_for_belongs_to_query(association, where_parameters)
+  def where_exists_for_belongs_to_query(association, where_parameters, &block)
     polymorphic = association.options[:polymorphic].present?
 
     association_scope = association.scope
@@ -93,13 +92,14 @@ module WhereExists
 
         query = query.where("#{self_type} IN (?)", other_types.uniq)
       end
+      query = yield query if block_given?
       queries.push query
     end
 
     queries
   end
 
-  def where_exists_for_has_many_query(association, where_parameters, next_association = {})
+  def where_exists_for_has_many_query(association, where_parameters, next_association = {}, &block)
     if association.through_reflection
       raise ArgumentError.new(association) unless association.source_reflection
       next_association = {
@@ -111,9 +111,9 @@ module WhereExists
 
       case association.macro
       when :has_many, :has_one
-        return where_exists_for_has_many_query(association, {}, next_association)
+        return where_exists_for_has_many_query(association, {}, next_association, &block)
       when :has_and_belongs_to_many
-        return where_exists_for_habtm_query(association, {}, next_association)
+        return where_exists_for_habtm_query(association, {}, next_association, &block)
       else
         inspection = nil
         begin
@@ -148,17 +148,18 @@ module WhereExists
     end
 
     if next_association[:association]
-      return loop_nested_association(result, next_association)
+      return loop_nested_association(result, next_association, &block)
     end
 
     if where_parameters != []
       result = result.where(*where_parameters)
     end
 
+    result = yield result if block_given?
     [result]
   end
 
-  def where_exists_for_habtm_query(association, where_parameters, next_association = {})
+  def where_exists_for_habtm_query(association, where_parameters, next_association = {}, &block)
     association_scope = association.scope
 
     associated_model = association.klass
@@ -182,7 +183,7 @@ module WhereExists
       where("#{join_ids} = #{self_ids}")
 
     if next_association[:association]
-      return loop_nested_association(result, next_association)
+      return loop_nested_association(result, next_association, &block)
     end
 
     if where_parameters != []
@@ -193,15 +194,18 @@ module WhereExists
       result = result.instance_exec(&association_scope)
     end
 
+    result = yield result if block_given?
+
     [result]
   end
 
-  def loop_nested_association(query, next_association = {}, nested = false)
+  def loop_nested_association(query, next_association = {}, nested = false, &block)
     str = query.klass.build_exists_string(
       next_association[:association].name,
       *[
         *next_association[:params]
       ],
+      &block
     )
 
     if next_association[:next_association] && next_association[:next_association][:association]
@@ -210,7 +214,8 @@ module WhereExists
         "(#{subq} AND (#{loop_nested_association(
           next_association[:association],
           next_association[:next_association],
-          true
+          true,
+          &block
         )}))"
       end
     end
