@@ -29,7 +29,7 @@ Syntax:
 Model.where_exists(association, additional_finder_parameters)
 ```
 
-Supported Rails versions: >= 4.2.
+Supported Rails versions: >= 5.2.
 
 ## Example of usage
 
