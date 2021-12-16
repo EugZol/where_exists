@@ -12,5 +12,5 @@ appraise '6.1' do
 end
 
 appraise '7' do
-  gem 'rails', '7.0.0.rc1'
+  gem 'rails', '~> 7.0'
 end
