@@ -29,7 +29,7 @@ Syntax:
 Model.where_exists(association, additional_finder_parameters)
 ```
 
-Supported Rails versions: >= 4.2.
+Supported Rails versions: >= 5.2.
 
 ## Example of usage
 
@@ -155,7 +155,11 @@ Also,
 * Submit pull request with new features or bug fixes
 * Enhance or clarify the documentation that you are reading
 
-To run tests: `bundle exec rake test`
+To run tests:
+```
+> bundle exec appraisal install
+> bundle exec appraisal rake test
+```
 
 ## License
 

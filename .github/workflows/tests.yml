@@ -1,0 +1,53 @@
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ['2.6', '2.7', '3.0']
+        rails: ['5.2', '6.0', '6.1', '7']
+        exclude:
+          - ruby: '3.0'
+            rails: '5.2'
+          - ruby: '2.6'
+            rails: '7'
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Ruby ${{ matrix.ruby }}
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+
+    - name: Install deps
+      run: |
+        sudo apt update -y
+        sudo apt install -y libsqlite3-dev
+
+    - name: Gems Cache
+      id: gem-cache
+      uses: actions/cache@v1
+      with:
+       path: vendor/bundle
+       key: ${{ runner.os }}-${{ matrix.ruby }}-${{ matrix.rails }}-gem
+       restore-keys: |
+         ${{ runner.os }}-${{ matrix.ruby }}-${{ matrix.rails }}-gem
+
+    - name: Install gems
+      env:
+        BUNDLE_GEMFILE: gemfiles/${{ matrix.rails }}.gemfile
+      run: |
+        gem install bundler --no-doc
+        bundle config set path 'vendor/bundle'
+        bundle check || bundle install --jobs 4 --retry 3
+
+    - name: Compile & test
+      env:
+        BUNDLE_GEMFILE: gemfiles/${{ matrix.rails }}.gemfile
+      run: |
+        bundle exec rake
+
