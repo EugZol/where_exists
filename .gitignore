@@ -4,3 +4,4 @@ pkg/
 test/db/**
 *.gem
 Gemfile.lock
+gemfiles/*.lock
