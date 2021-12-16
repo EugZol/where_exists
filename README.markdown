@@ -155,6 +155,8 @@ Also,
 * Submit pull request with new features or bug fixes
 * Enhance or clarify the documentation that you are reading
 
+**Please ping me in addition to creating PR/issue** (just add "@EugZol" to the PR/issue text). Thank you!
+
 To run tests:
 ```
 > bundle exec appraisal install
