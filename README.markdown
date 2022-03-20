@@ -4,7 +4,7 @@
 
 ## Description
 
-<img src="http://i.imgur.com/psLfPoW.gif" alt="Exists" align="right" width="100" height="200">
+<img src="exists.png" alt="Exists" align="right" width="100" height="200">
 
 This gem does exactly two things:
 
