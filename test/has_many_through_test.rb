@@ -52,8 +52,6 @@ class Blob < ActiveRecord::Base
   end
 end
 
-
-
 class Project < ActiveRecord::Base
   has_many :tasks
   has_many :invoices, :through => :tasks
@@ -99,8 +97,6 @@ class HasManyThroughTest < Minitest::Test
   end
 
   def test_one_level_through
-    ActiveRecord::Base.descendants.each(&:delete_all)
-
     project = Project.create!
     irrelevant_project = Project.create!
 
@@ -121,8 +117,6 @@ class HasManyThroughTest < Minitest::Test
   end
 
   def test_deep_through
-    ActiveRecord::Base.descendants.each(&:delete_all)
-
     project = Project.create! name: 'relevant'
     irrelevant_project = Project.create! name: 'irrelevant'
 
@@ -188,6 +182,14 @@ class HasManyThroughTest < Minitest::Test
     result = Project.where_not_exists(:blobs)
 
     assert_equal 0, result.length
+  end
 
+  def test_with_yield
+    project = Project.create! name: 'example_project'
+    task = Task.create!(project: project)
+    line_item = LineItem.create!(name: 'example_line_item', task: task)
+    result = Project.where_exists(:project_line_items) { |scope| scope.where(name: 'example_line_item') }
+
+    assert_equal 1, result.length
   end
 end
