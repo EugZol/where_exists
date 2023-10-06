@@ -5,7 +5,7 @@ Bundler.require(:default)
 require 'active_record'
 require File.dirname(__FILE__) + '/../lib/where_exists'
 
-if Rails.gem_version < Gem::Version.new("7.1")
+if Gem.latest_spec_for('activerecord').version < Gem::Version.new("7.1")
   ActiveRecord.default_timezone = :utc
 else
   ActiveRecord::Base.default_timezone = :utc
