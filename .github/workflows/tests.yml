@@ -8,10 +8,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ['2.6', '2.7', '3.0']
+        ruby: ['2.6', '2.7', '3.2']
         rails: ['5.2', '6.0', '6.1', '7']
         exclude:
-          - ruby: '3.0'
+          - ruby: '3.2'
             rails: '5.2'
           - ruby: '2.6'
             rails: '7'
