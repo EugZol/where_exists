@@ -48,7 +48,7 @@ module WhereExists
       rescue
         inspection = association.macro
       end
-      raise ArgumentError.new("where_exists: not supported association – #{inspection}")
+      raise ArgumentError.new("where_exists: not supported association - #{inspection}")
     end
 
     queries_sql =
@@ -121,7 +121,7 @@ module WhereExists
         rescue
           inspection = association.macro
         end
-        raise ArgumentError.new("where_exists: not supported association – #{inspection}")
+        raise ArgumentError.new("where_exists: not supported association - #{inspection}")
       end
     end
 
