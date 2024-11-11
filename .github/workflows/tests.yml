@@ -8,16 +8,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ['2.6', '2.7', '3.2']
-        rails: ['5.2', '6.0', '6.1', '7']
+        ruby: ['2.7', '3.2', '3.3']
+        rails: ['7.0', '7.1', '7.2', '8.0']
         exclude:
-          - ruby: '3.2'
-            rails: '5.2'
-          - ruby: '2.6'
-            rails: '7'
+          - ruby: '2.7'
+            rails: '8.0'
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Ruby ${{ matrix.ruby }}
       uses: ruby/setup-ruby@v1
       with:
@@ -30,7 +28,7 @@ jobs:
 
     - name: Gems Cache
       id: gem-cache
-      uses: actions/cache@v1
+      uses: actions/cache@v4
       with:
        path: vendor/bundle
        key: ${{ runner.os }}-${{ matrix.ruby }}-${{ matrix.rails }}-gem
