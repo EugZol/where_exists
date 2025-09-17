@@ -110,7 +110,7 @@ module WhereExists
       association = association.through_reflection
 
       case association.macro
-      when :has_many, :has_one
+      when :has_many, :has_one, :belongs_to
         return where_exists_for_has_many_query(association, {}, next_association, &block)
       when :has_and_belongs_to_many
         return where_exists_for_habtm_query(association, {}, next_association, &block)
@@ -128,10 +128,17 @@ module WhereExists
     association_scope = next_association[:scope] || association.scope
 
     associated_model = association.klass
-    primary_key = association.options[:primary_key] || self.primary_key
+
+    if association.macro == :belongs_to
+      foreign_key = association.options[:primary_key] || self.primary_key
+      primary_key = association.foreign_key
+    else
+      primary_key = association.options[:primary_key] || self.primary_key
+      foreign_key = association.foreign_key
+    end
 
     self_ids = quote_table_and_column_name(self.table_name, primary_key)
-    associated_ids = quote_table_and_column_name(associated_model.table_name, association.foreign_key)
+    associated_ids = quote_table_and_column_name(associated_model.table_name, foreign_key)
 
     result = associated_model.select("1").where("#{associated_ids} = #{self_ids}")
 
