@@ -13,8 +13,5 @@ else
 end
 
 ActiveRecord::Base.time_zone_aware_attributes = true
-
-ActiveRecord::Base.establish_connection(
-  :adapter => 'sqlite3',
-  :database => File.dirname(__FILE__) + '/db/test.db'
-)
+ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
+ActiveRecord::Base.logger = Logger.new(STDOUT)
