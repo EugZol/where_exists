@@ -105,7 +105,8 @@ module WhereExists
       next_association = {
         association: association.source_reflection,
         params: where_parameters,
-        next_association: next_association
+        next_association: next_association,
+        scope: association.scope
       }
       association = association.through_reflection
 
@@ -125,7 +126,7 @@ module WhereExists
       end
     end
 
-    association_scope = next_association[:scope] || association.scope
+    association_scope = association.scope
 
     associated_model = association.klass
 
@@ -207,12 +208,18 @@ module WhereExists
   end
 
   def loop_nested_association(query, next_association = {}, nested = false, &block)
+    scope = next_association[:scope] || -> { self }
+    block ||= ->(it) { it }
+    block_with_scope =
+      lambda do |it|
+        block.call(it.instance_exec(&scope))
+      end
     str = query.klass.build_exists_string(
       next_association[:association].name,
       *[
         *next_association[:params]
-      ],
-      &block
+      ].compact,
+      &block_with_scope
     )
 
     if next_association[:next_association] && next_association[:next_association][:association]
@@ -222,7 +229,7 @@ module WhereExists
           next_association[:association],
           next_association[:next_association],
           true,
-          &block
+          &block_with_scope
         )}))"
       end
     end
