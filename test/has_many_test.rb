@@ -13,7 +13,11 @@ end
 
 class SimpleEntity < ActiveRecord::Base
   has_many :simple_entity_children, primary_key: :my_id, foreign_key: :parent_id
-  has_many :unnamed_children, -> { where name: nil }, primary_key: :my_id, foreign_key: :parent_id, class_name: 'SimpleEntityChild'
+  has_many :unnamed_children, -> { where name: nil }, primary_key: :my_id, foreign_key: :parent_id, class_name: 'SimpleEntityChild' do
+    def unborn
+      where('my_date < ?', Time.now)
+    end
+  end
 end
 
 class SimpleEntityChild < ActiveRecord::Base
@@ -56,6 +60,16 @@ class HasManyTest < Minitest::Test
     entity = SimpleEntity.create!(simple_entity_children: [child], my_id: 999)
 
     result = SimpleEntity.unscoped.where_exists(:simple_entity_children)
+
+    assert_equal 1, result.length
+    assert_equal result.first.id, entity.id
+  end
+
+  def test_with_association_extension_scope
+    child = SimpleEntityChild.create!(my_date: Time.now - 1.minute)
+    entity = SimpleEntity.create!(simple_entity_children: [child], my_id: 999)
+
+    result = SimpleEntity.where_exists(:unnamed_children, &:unborn)
 
     assert_equal 1, result.length
     assert_equal result.first.id, entity.id

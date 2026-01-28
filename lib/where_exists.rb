@@ -163,6 +163,10 @@ module WhereExists
       result = result.where(*where_parameters)
     end
 
+    if (association.extensions.any?)
+      result.extending!(association.extensions)
+    end
+
     result = yield result if block_given?
     [result]
   end
