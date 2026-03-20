@@ -73,13 +73,12 @@ module WhereExists
 
     queries = []
 
-    self_ids = quote_table_and_column_name(self.table_name, association.foreign_key)
     self_type = quote_table_and_column_name(self.table_name, association.foreign_type)
 
     associated_models.each do |associated_model|
       primary_key = association.options[:primary_key] || associated_model.primary_key
-      other_ids = quote_table_and_column_name(associated_model.table_name, primary_key)
-      query = associated_model.select("1").where("#{self_ids} = #{other_ids}")
+      join_condition = build_join_condition(self.table_name, association.foreign_key, associated_model.table_name, primary_key)
+      query = associated_model.select("1").where(join_condition)
       if where_parameters != []
         query = query.where(*where_parameters)
       end
@@ -138,10 +137,9 @@ module WhereExists
       foreign_key = association.foreign_key
     end
 
-    self_ids = quote_table_and_column_name(self.table_name, primary_key)
-    associated_ids = quote_table_and_column_name(associated_model.table_name, foreign_key)
+    join_condition = build_join_condition(associated_model.table_name, foreign_key, self.table_name, primary_key)
 
-    result = associated_model.select("1").where("#{associated_ids} = #{self_ids}")
+    result = associated_model.select("1").where(join_condition)
 
     if association.options[:as]
       other_types = quote_table_and_column_name(associated_model.table_name, association.type)
@@ -239,6 +237,19 @@ module WhereExists
     end
 
     nested ? str : [query.where(str)]
+  end
+
+  def build_join_condition(left_table, left_keys, right_table, right_keys)
+    left_keys = Array(left_keys)
+    right_keys = Array(right_keys)
+
+    conditions = left_keys.zip(right_keys).map do |lk, rk|
+      left_col = quote_table_and_column_name(left_table, lk)
+      right_col = quote_table_and_column_name(right_table, rk)
+      "#{left_col} = #{right_col}"
+    end
+
+    conditions.join(' AND ')
   end
 
   def quote_table_and_column_name(table_name, column_name)

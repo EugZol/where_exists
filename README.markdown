@@ -142,6 +142,10 @@ User.where_exists(:groups, &:approved)
 **A**: Yes.
 
 
+**Q**: Does it support composite (multi-column) foreign keys, e.g. `has_many :children, foreign_key: %i[foo bar], primary_key: %i[foo bar]`?<br>
+**A**: Yes. Each key column is matched individually with AND conditions in the EXISTS subquery.
+
+
 **Q**: Does it take into account default association condition, e.g. `has_many :drafts, -> { where published: nil }`?<br>
 **A**: Yes.
 
