@@ -51,6 +51,18 @@ module WhereExists
       raise ArgumentError.new("where_exists: not supported association - #{inspection}")
     end
 
+    queries.each { it.arel }
+
+    # Make a best effort at detecting references to the same table
+    visited_table_names = Set.new
+    queries.each do |query|
+      table_name = query.klass.table_name
+      if visited_table_names.include?(table_name)
+        raise "Already visited table #{table_name} - cannot use where_exists on multiple associations to the same table (#{table_name}) - This can happen either through a nested where_exists or by joining a parent table more than once. Please use a different association name or alias the association to avoid this problem."
+      end
+      visited_table_names.add(table_name)
+    end
+
     queries_sql =
       queries.map do |query|
         "EXISTS (" + query.to_sql + ")"
