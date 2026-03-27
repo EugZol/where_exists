@@ -2,11 +2,19 @@ require 'active_record'
 
 module WhereExists
   def where_exists(association_name, *where_parameters, &block)
-    where_exists_or_not_exists(true, association_name, where_parameters, &block)
+    result = where_exists_or_not_exists(true, association_name, where_parameters, &block)
+
+    visited_table_names.clear
+
+    result
   end
 
   def where_not_exists(association_name, *where_parameters, &block)
-    where_exists_or_not_exists(false, association_name, where_parameters, &block)
+    result = where_exists_or_not_exists(false, association_name, where_parameters, &block)
+
+    visited_table_names.clear
+
+    result
   end
 
   protected
@@ -54,13 +62,26 @@ module WhereExists
     queries.each { it.arel }
 
     # Make a best effort at detecting references to the same table
-    visited_table_names = Set.new
     queries.each do |query|
       table_name = query.klass.table_name
-      if visited_table_names.include?(table_name)
-        raise "Already visited table #{table_name} - cannot use where_exists on multiple associations to the same table (#{table_name}) - This can happen either through a nested where_exists or by joining a parent table more than once. Please use a different association name or alias the association to avoid this problem."
+
+      # Check for the joins in this query
+      query.arel.ast.cores.each do |core|
+        table_name = core.source.left.name
+        if visited_table_names.include?(table_name)
+          raise "Already visited table #{table_name} - cannot use where_exists on multiple associations to the same table (#{table_name}) - This can happen either through a nested where_exists or by joining a parent table more than once. Please use a different association name or alias the association to avoid this problem."
+        end
+        visited_table_names.add(table_name)
+
+        core.source.right.each do |join|
+          table_name = core.source.left.name
+          if visited_table_names.include?(table_name)
+            raise "Already visited table #{table_name} - cannot use where_exists on multiple associations to the same table (#{table_name}) - This can happen either through a nested where_exists or by joining a parent table more than once. Please use a different association name or alias the association to avoid this problem."
+          end
+
+          visited_table_names.add(table_name)
+        end
       end
-      visited_table_names.add(table_name)
     end
 
     queries_sql =
@@ -252,6 +273,8 @@ module WhereExists
   def quote_table_and_column_name(table_name, column_name)
     connection.quote_table_name(table_name) + '.' + connection.quote_column_name(column_name)
   end
+
+  def visited_table_names = @_visited_table_names ||= Set.new
 end
 
 class ActiveRecord::Base
